@@ -1,2 +1,2 @@
-# elevator
-Elevator phsyics to teach how to use controllers.
+# Elevator for control system design teaching
+Elevator physics to teach how to use controllers.
