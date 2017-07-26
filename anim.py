@@ -4,45 +4,95 @@ import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as patches
 
-from scipy.integrate import odeint
+from scipy.integrate import ode
 
-def PidController(x):
-    r = 27
-    kp = 10
-    ki = 1
+class PidController:
+    def __init__(self, reference):
+        self.integral = 0
+        self.prev_error = 0
+        self.r = reference
+        self.prev_time = 0
+        self.finished = 0
+        self.max_i = 10000
+
+    def Run(self, x, t):
+        kp = 15
+        ki = 0.001
     
-    e = r - x
-    
-       
-    
-    return kp*e
+        e = self.r - x
+
+        self.integral += e * (t - self.prev_time)
+
+        if self.integral > self.max_i:
+            self.integral = self.max_i
+        if self.integral < -self.max_i:
+            self.integral = -self.max_i
+
+        output = kp*e + ki*self.integral
+        return output
 
 
-def ElevatorPhysics(state, t):
+
+
+
+Pid = PidController(27)
+
+
+# ODE Solver 
+def ElevatorPhysics(t, state):
+    if Pid.finished == 1:
+        return [0,0]
+
     # State vector.
     x = state[0]
     x_dot = state[1]
+    
 
     # Mass of elevator in kg.
     m = 100.0
     # Acceleration of gravity.
     g = -9.8
+    
+    x_dot_dot = g + Pid.Run(x,t) - x_dot*5
 
-    x_dot_dot = g + PidController(x) - x_dot*0.4
+    print(t, x_dot, x_dot_dot)
 
+    if abs(x_dot) < 0.01 and abs(Pid.r - x) < 0.03:
+        Pid.finished = 1
+        return [0, 0]
     # Output state derivatives.
     return [x_dot, x_dot_dot]
 
+
 # ODE Info.
+solver = ode(ElevatorPhysics)
+solver.set_integrator('dopri5')
+
+# Set initial values.
+t0 = 0.0
+t_end = 30.2
+dt = 0.01
+
+
+t = np.arange(t0, t_end, dt)
+
+
+# Solution array and initial states.
+sol = np.zeros((int(t_end/dt), 2))
 state_initial = [30.0, 0.0]
-t = np.arange(0.0, 110.0, 0.01)
+solver.set_initial_value(state_initial, t0)
+sol[0] = state_initial
 
-state = odeint(ElevatorPhysics, state_initial, t)
+# Repeatedly call the `integrate` method to advance the
+# solution to time t[k], and save the solution in sol[k].
+k = 1
+while solver.successful() and solver.t < t_end-dt:
+    solver.integrate(t[k])
+    sol[k] = solver.y
+    k += 1
 
 
-
-
-
+state = sol
 
 
 ###################
