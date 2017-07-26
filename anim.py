@@ -2,26 +2,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.gridspec as gridspec
+import matplotlib.patches as patches
 
 from scipy.integrate import odeint
 
-def update_plot(num, data, state, line, line2, line3):
-    line.set_data(data[:,:int(num/10)])
-    line2.set_data(20,state[num,0])
-
-    time_text.set_text(str(num/100))
-
-    line3.set_data(t[0:num], state[0:num,0])
-
-    return line, line2, time_text, line3
-
-
-
 def PidController(x):
-    if x < 20:
-        return 30
-    else:
-        return 0
+    r = 27
+    kp = 10
+    ki = 1
+    
+    e = r - x
+    
+       
+    
+    return kp*e
 
 
 def ElevatorPhysics(state, t):
@@ -34,49 +28,94 @@ def ElevatorPhysics(state, t):
     # Acceleration of gravity.
     g = -9.8
 
-    x_dot_dot = g + PidController(x)
+    x_dot_dot = g + PidController(x) - x_dot*0.4
 
     # Output state derivatives.
     return [x_dot, x_dot_dot]
 
-
-state_initial = [50.0, 0.0]
+# ODE Info.
+state_initial = [30.0, 0.0]
 t = np.arange(0.0, 110.0, 0.01)
 
 state = odeint(ElevatorPhysics, state_initial, t)
 
-data = np.array([np.ones(51)*39, np.arange(51)])
 
 
 
 
-fig1 = plt.figure(figsize=(4,8))
+
+
+###################
+# SIMULATOR DISPLAY
+
+
+def update_plot(num):
+    # Time bar.
+    time_bar.set_data(data[:,:int(num)]/100)
+
+    # Elevator.
+    el_l.set_data([3, 3],[state[num,0], state[num,0]+3])
+    el_r.set_data([6, 6],[state[num,0], state[num,0]+3])
+    el_t.set_data([3, 6],[state[num,0]+3, state[num,0]+3])
+    el_b.set_data([3, 6],[state[num,0], state[num,0]])
+    
+
+    # Timer.
+    time_text.set_text(str(num/100))
+
+    # Strip Chart.
+    l3.set_data(t[0:num], state[0:num,0])
+
+    return time_bar, el_l, el_r, el_t, el_b, time_text, l3,
+
+
+data = np.array([np.ones(1100)*980, np.arange(1100)])
+
+
+
+# Total Figure
+fig = plt.figure(figsize=(4,8))
 gs = gridspec.GridSpec(17,1)
 
-# Elevator plot.
-ax = fig1.add_subplot(gs[:13, :])
-time_text = ax.text(.5, .5, '', fontsize=15)
-l, l2, = ax.plot([], [], 'r-', [], [], 'ks', markersize = 50, markerfacecolor='None', markeredgewidth=3)
-
-plt.xlim(0, 40)
-plt.ylim(0, 50)
-#plt.xlabel('x')
+# Elevator plot settings.
+ax = fig.add_subplot(gs[:13, :])
+plt.xlim(0, 10)
+plt.ylim(0, 31)
+plt.xticks([])
+plt.yticks(np.arange(0,31,3))
 plt.title('Elevator')
 
+# Time display.
+time_text = ax.text(8.0, .5, '', fontsize=15)
 
-# Strip chart.
-ax = fig1.add_subplot(gs[14:19,:])
+# Floor Labels.
+floors = ['G', '2', '10']
+floor_height = [0.5, 3.5, 27.5]
+floor_x = [0.25, 0.25, 0.25]
+for i in range(len(floors)):
+    ax.text(floor_x[i], floor_height[i], floors[i])
+    ax.plot([0, 3], [floor_height[i]-0.5, floor_height[i]-0.5], 'k-')
+
+
+# Plot info.
+time_bar, = ax.plot([], [], 'r-')
+el_l, el_r = ax.plot([], [], 'k-', [], [], 'k-')
+el_t, el_b = ax.plot([], [], 'k-', [], [], 'k-')
+
+
+
+
+# Strip chart settings.
+ax = fig.add_subplot(gs[14:19,:])
 l3, = ax.plot([], [], '-b')
-
-
-plt.xlim(0, 10)
-plt.ylim(-50, 50)
-
+plt.xlabel('Time (s)')
+plt.xlim(0, 30)
+plt.ylim(0, 31)
 
 
 
-elevator_ani = animation.FuncAnimation(fig1, update_plot, int(10.02*100), fargs=(data, state, l, l2, l3),
-    interval=10, repeat = False, blit=True)
+# Animation.
+elevator_ani = animation.FuncAnimation(fig, update_plot, frames=int(30.0*100), interval=10, repeat = False, blit=True)
 #line_ani.save('lines.mp4')
 
 plt.show()
