@@ -26,50 +26,57 @@ class PidController:
     def __init__(self, reference):
         self.integral = 0
         self.prev_error = 0
-        self.prev_D_error = 0
-        self.prev_D_time = 0
-        self.prev_D_out = 0
         self.r = reference
         self.prev_time = 0
         self.finished = 0
         self.max_i = 1000
         self.count = 0
+        self.output = 0
+        self.output_data = np.array([[0, 0, 0, 0]])
 
     def Run(self, x, t):
         kp = 0.5
-        ki = 0.0
+        ki = 0.01
         kd = 0.01
 
-        e = self.r - x
-
-        dt = t - self.prev_time
-        self.prev_time = t
-
-        # Set Max I to Prevent Windup
-        self.integral += e * (dt)
-        if self.integral > self.max_i:
-            self.integral = self.max_i
-        if self.integral < -self.max_i:
-            self.integral = -self.max_i
-
-        P_out = kp * e
-        I_out = ki * self.integral
-        if t - self.prev_D_time > 0.1:
-            D_out = kd * (e - self.prev_error)/(t - self.prev_D_time)
-            self.prev_D_out = D_out
-            self.prev_D_time = t
+        if t - self.prev_time < 0.05:
+            return self.output
         else:
-            D_out = self.prev_D_out
+            e = self.r - x
 
-        output = P_out + I_out + D_out
-        if output > 1.5:
-            output = 1.5
-        if output < -1.5:
-            output = -1.5
-        #print(round(P_out,2), round(I_out,2), round(D_out,2), output)
-        print(self.count)
-        self.count += 1
-        return output
+            dt = t - self.prev_time
+            self.prev_time = t
+
+            # Set Max I to Prevent Windup
+            self.integral += e * dt
+            if self.integral > self.max_i:
+                self.integral = self.max_i
+            if self.integral < -self.max_i:
+                self.integral = -self.max_i
+
+            P_out = kp * e
+            I_out = ki * self.integral
+            if dt > 0 and self.prev_error != 0:
+                D_out = kd * (e - self.prev_error)/(dt)
+            else:
+                D_out = 0
+            self.prev_error = e
+
+            output = P_out + I_out + D_out
+            if output > 1.5:
+                output = 1.5
+            if output < -1.5:
+                output = -1.5
+
+            #print(round(P_out,2), round(I_out,2), round(D_out,2), output)
+            print(self.count)
+            self.count += 1
+            self.output = output
+
+            self.output_data = np.concatenate((self.output_data, \
+                np.array([[t, P_out, I_out, D_out]])))
+
+            return self.output
 
 
 
@@ -177,7 +184,18 @@ def update_plot(num):
     if abs(state[num,2]) > 5 and len(acc_status.get_text()) < 1:
         acc_status.set_text('FAIL')
 
-    return time_bar, el_l, el_r, el_t, el_b, time_text, pos, vel, acc, acc_status, vel_status, pos_status
+    # Debug time line.
+    if PID_DEBUG:
+        p_line.set_data([num/100, num/100], [-100, 100])
+        i_line.set_data([num/100, num/100], [-100, 100])
+        d_line.set_data([num/100, num/100], [-100, 100])
+        return time_bar, el_l, el_r, el_t, el_b, time_text, \
+               pos, vel, acc, acc_status, vel_status, pos_status, \
+               p_line, i_line, d_line
+    else:
+        return time_bar, el_l, el_r, el_t, el_b, time_text, \
+               pos, vel, acc, acc_status, vel_status, pos_status
+
 
 
 # Total Figure
@@ -213,6 +231,8 @@ el_t, el_b = ax.plot([], [], 'k-', [], [], 'k-')
 
 # Strip chart settings.
 strip_width = 4
+if PID_DEBUG:
+    strip_width = 7
 
 # Position
 ax = fig.add_subplot(gs[0:4, strip_width:])
@@ -243,6 +263,37 @@ plt.title('Acceleration')
 plt.xlabel('Time (s)')
 plt.xlim(0, 30)
 plt.ylim(-10, 10)
+
+if PID_DEBUG:
+    debug_width = 4
+    data = Pid.output_data
+    print(len(data[:,0]))
+    # P
+    ax = fig.add_subplot(gs[0:4, debug_width:strip_width])
+    p_plot, = ax.plot(data[:,0], data[:,1], '-k')
+    p_line, = ax.plot([], [], '-r')
+    plt.title('P Output Acceleration')
+    plt.xticks([0,30])
+    plt.xlim(0, 30)
+    #plt.ylim(-10, 10)
+
+    # I
+    ax = fig.add_subplot(gs[5:9, debug_width:strip_width])
+    i_plot, = ax.plot(data[:,0], data[:,2], '-k')
+    i_line, = ax.plot([], [], '-r')
+    plt.title('I Output Acceleration')
+    plt.xticks([0,30])
+    plt.xlim(0, 30)
+    #plt.ylim(-10, 10)
+
+    # D
+    ax = fig.add_subplot(gs[10:14, debug_width:strip_width])
+    d_plot, = ax.plot(data[:,0], data[:,3], '-k')
+    d_line, = ax.plot([], [], '-r')
+    plt.title('D Output Acceleration')
+    plt.xlabel('Time (s)')
+    plt.xlim(0, 30)
+
 
 # Animation.
 elevator_ani = animation.FuncAnimation(fig, update_plot, frames=range(0,int(30.0*100),10), interval=100, repeat = False, blit=True)
