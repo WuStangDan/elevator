@@ -7,12 +7,12 @@ import time
 from scipy.integrate import ode
 
 # Simulator Options
-FIG_SIZE = [12, 8] # [Width, Height]
+FIG_SIZE = [8, 8] # [Width, Height]
 PID_DEBUG = False
 
 # Physics Options
 GRAVITY = False
-FRICTION = False
+FRICTION = True
 
 # Controller Options
 CONTROLLER = True
@@ -26,14 +26,18 @@ class PidController:
     def __init__(self, reference):
         self.integral = 0
         self.prev_error = 0
+        self.prev_D_error = 0
+        self.prev_D_time = 0
+        self.prev_D_out = 0
         self.r = reference
         self.prev_time = 0
         self.finished = 0
-        self.max_i = 10000
+        self.max_i = 1000
+        self.count = 0
 
     def Run(self, x, t):
-        kp = 1
-        ki = 0.01
+        kp = 0.5
+        ki = 0.0
         kd = 0.01
 
         e = self.r - x
@@ -41,16 +45,30 @@ class PidController:
         dt = t - self.prev_time
         self.prev_time = t
 
+        # Set Max I to Prevent Windup
         self.integral += e * (dt)
-
         if self.integral > self.max_i:
             self.integral = self.max_i
         if self.integral < -self.max_i:
             self.integral = -self.max_i
 
-        output = kp*e + ki*self.integral #+ kd * (e - self.prev_error)/(t-self.prev_time)
+        P_out = kp * e
+        I_out = ki * self.integral
+        if t - self.prev_D_time > 0.1:
+            D_out = kd * (e - self.prev_error)/(t - self.prev_D_time)
+            self.prev_D_out = D_out
+            self.prev_D_time = t
+        else:
+            D_out = self.prev_D_out
 
-        #print(self.integral)
+        output = P_out + I_out + D_out
+        if output > 1.5:
+            output = 1.5
+        if output < -1.5:
+            output = -1.5
+        #print(round(P_out,2), round(I_out,2), round(D_out,2), output)
+        print(self.count)
+        self.count += 1
         return output
 
 
@@ -82,9 +100,9 @@ def ElevatorPhysics(t, state):
 
     #print(t, x_dot, x_dot_dot)
 
-    if abs(x_dot) < 0.01 and abs(Pid.r - x) < 0.03:
-        Pid.finished = 1
-        return [0, 0]
+    #if abs(x_dot) < 0.01 and abs(Pid.r - x) < 0.03:
+    #    Pid.finished = 1
+    #    return [0, 0]
     # Output state derivatives.
     return [x_dot, x_dot_dot]
 
@@ -133,7 +151,7 @@ print("ODE Compute Time: ", time.clock() - start, "seconds.")
 
 def update_plot(num):
     # Time bar.
-    time_bar.set_data(data[:,:int(num)]/100)
+    time_bar.set_data([9.8, 9.8], [0, num/100])
 
     # Elevator.
     el_l.set_data([3, 3],[state[num,0], state[num,0]+3])
@@ -144,27 +162,30 @@ def update_plot(num):
     #print(state[num])
 
     # Timer.
-    if state[num,0] > 0:
-        time_text.set_text(str(num/100))
+    time_text.set_text(str(round(num/100,1)))
 
     # Strip Chart.
     pos.set_data(t[0:num], state[0:num,0])
     vel.set_data(t[0:num], state[0:num,1])
     acc.set_data(t[0:num], state[0:num,2])
 
-    return time_bar, el_l, el_r, el_t, el_b, time_text, pos, vel, acc
+    # Status
+    if abs(state[num,1]) < 0.01 and abs(SET_POINT-state[num,0]) < 0.03:
+        pos_status.set_text('PASS')
+    if abs(state[num,1]) > 18 and len(vel_status.get_text()) < 1:
+        vel_status.set_text('FAIL')
+    if abs(state[num,2]) > 5 and len(acc_status.get_text()) < 1:
+        acc_status.set_text('FAIL')
 
-
-data = np.array([np.ones(1100)*980, np.arange(1100)])
-
+    return time_bar, el_l, el_r, el_t, el_b, time_text, pos, vel, acc, acc_status, vel_status, pos_status
 
 
 # Total Figure
 fig = plt.figure(figsize=(FIG_SIZE[0], FIG_SIZE[1]))
-gs = gridspec.GridSpec(14,6)
+gs = gridspec.GridSpec(14,8)
 
 # Elevator plot settings.
-ax = fig.add_subplot(gs[:, :2])
+ax = fig.add_subplot(gs[:, :3])
 plt.xlim(0, 10)
 plt.ylim(0, 31)
 plt.xticks([])
@@ -172,7 +193,7 @@ plt.yticks(np.arange(0,31,3))
 plt.title('Elevator')
 
 # Time display.
-time_text = ax.text(8.0, .5, '', fontsize=15)
+time_text = ax.text(7.5, 0.5, '', fontsize=15)
 
 # Floor Labels.
 floors = ['G', '2', '10']
@@ -191,9 +212,12 @@ el_t, el_b = ax.plot([], [], 'k-', [], [], 'k-')
 
 
 # Strip chart settings.
+strip_width = 4
+
 # Position
-ax = fig.add_subplot(gs[0:4,3:])
+ax = fig.add_subplot(gs[0:4, strip_width:])
 pos, = ax.plot([], [], '-b')
+pos_status = ax.text(1.0, SET_POINT, '', fontsize=20, color='g')
 plt.title('Position')
 plt.xticks([0,30])
 plt.xlim(0, 30)
@@ -203,23 +227,25 @@ else:
     plt.ylim(SET_POINT - 10, START_LOC+10)
 
 # Velocity
-ax = fig.add_subplot(gs[5:9,3:])
+ax = fig.add_subplot(gs[5:9, strip_width:])
 vel, = ax.plot([], [], '-b')
+vel_status = ax.text(1.0, -18.0, '', fontsize=20, color='r')
 plt.title('Velocity')
 plt.xticks([0,30])
 plt.xlim(0, 30)
 plt.ylim(-20, 20)
 
 # Acceleration
-ax = fig.add_subplot(gs[10:14,3:])
+ax = fig.add_subplot(gs[10:14, strip_width:])
 acc, = ax.plot([], [], '-b')
+acc_status = ax.text(1.0, -9.0, '', fontsize=20, color='r')
 plt.title('Acceleration')
 plt.xlabel('Time (s)')
 plt.xlim(0, 30)
 plt.ylim(-10, 10)
 
 # Animation.
-elevator_ani = animation.FuncAnimation(fig, update_plot, frames=range(0,int(30.0*100),5), interval=50, repeat = False, blit=True)
+elevator_ani = animation.FuncAnimation(fig, update_plot, frames=range(0,int(30.0*100),10), interval=100, repeat = False, blit=True)
 #line_ani.save('lines.mp4')
 
 plt.show()
