@@ -8,16 +8,17 @@ from scipy.integrate import ode
 
 # Simulator Options
 FIG_SIZE = [8, 8] # [Width, Height]
-PID_DEBUG = False
+PID_DEBUG = True
 
 # Physics Options
-GRAVITY = False
+GRAVITY = True
 FRICTION = True
+MASS_RATIO = 1.1
 
 # Controller Options
 CONTROLLER = True
-START_LOC = 0.0
-SET_POINT = 27.0
+START_LOC = 27.0
+SET_POINT = 3.0
 
 
 
@@ -29,15 +30,17 @@ class PidController:
         self.r = reference
         self.prev_time = 0
         self.finished = 0
-        self.max_i = 1000
+        self.max_i = 2.5
         self.count = 0
         self.output = 0
         self.output_data = np.array([[0, 0, 0, 0]])
+        self.output_min_max = True
+        self.output_offset = True
 
     def Run(self, x, t):
-        kp = 0.5
-        ki = 0.01
-        kd = 0.01
+        kp = 2
+        ki = 0.5
+        kd = 2.5
 
         if t - self.prev_time < 0.05:
             return self.output
@@ -63,13 +66,17 @@ class PidController:
             self.prev_error = e
 
             output = P_out + I_out + D_out
-            if output > 1.5:
-                output = 1.5
-            if output < -1.5:
-                output = -1.5
+
+            if self.output_min_max:
+                if output > 4:
+                    output = 4
+                if output < -4:
+                    output = -4
+            if self.output_offset:
+                output += 9.8
 
             #print(round(P_out,2), round(I_out,2), round(D_out,2), output)
-            print(self.count)
+            #print(self.count)
             self.count += 1
             self.output = output
 
@@ -92,15 +99,16 @@ def ElevatorPhysics(t, state):
     x = state[0]
     x_dot = state[1]
 
-    # Mass of elevator in kg.
-    m = 100.0
     # Acceleration of gravity.
     g = -9.8
     x_dot_dot = 0
-    if GRAVITY:
-        x_dot_dot += g
+
     if CONTROLLER:
-        x_dot_dot += Pid.Run(x,t)
+        x_dot_dot += Pid.Run(x,t) / MASS_RATIO
+    if GRAVITY:
+        if CONTROLLER and x_dot_dot == 0:
+            x_dot_dot -= g
+        x_dot_dot += g
     if FRICTION:
         x_dot_dot -= x_dot*0.5
     #x_dot_dot = g #+ Pid.Run(x,t) - x_dot*5
@@ -124,7 +132,7 @@ solver.set_integrator('dopri5')
 # Set initial values.
 t0 = 0.0
 t_end = 30.2
-dt = 0.01
+dt = 0.05
 
 
 t = np.arange(t0, t_end, dt)
@@ -158,7 +166,7 @@ print("ODE Compute Time: ", time.clock() - start, "seconds.")
 
 def update_plot(num):
     # Time bar.
-    time_bar.set_data([9.8, 9.8], [0, num/100])
+    time_bar.set_data([7.8, 7.8], [0, num/20])
 
     # Elevator.
     el_l.set_data([3, 3],[state[num,0], state[num,0]+3])
@@ -169,7 +177,7 @@ def update_plot(num):
     #print(state[num])
 
     # Timer.
-    time_text.set_text(str(round(num/100,1)))
+    time_text.set_text(str(round(num/20+0.04,1)))
 
     # Strip Chart.
     pos.set_data(t[0:num], state[0:num,0])
@@ -186,9 +194,9 @@ def update_plot(num):
 
     # Debug time line.
     if PID_DEBUG:
-        p_line.set_data([num/100, num/100], [-100, 100])
-        i_line.set_data([num/100, num/100], [-100, 100])
-        d_line.set_data([num/100, num/100], [-100, 100])
+        p_line.set_data([num/20, num/20], [-1000, 1000])
+        i_line.set_data([num/20, num/20], [-1000, 1000])
+        d_line.set_data([num/20, num/20], [-1000, 1000])
         return time_bar, el_l, el_r, el_t, el_b, time_text, \
                pos, vel, acc, acc_status, vel_status, pos_status, \
                p_line, i_line, d_line
@@ -204,14 +212,14 @@ gs = gridspec.GridSpec(14,8)
 
 # Elevator plot settings.
 ax = fig.add_subplot(gs[:, :3])
-plt.xlim(0, 10)
+plt.xlim(0, 8)
 plt.ylim(0, 31)
 plt.xticks([])
 plt.yticks(np.arange(0,31,3))
 plt.title('Elevator')
 
 # Time display.
-time_text = ax.text(7.5, 0.5, '', fontsize=15)
+time_text = ax.text(6, 0.5, '', fontsize=15)
 
 # Floor Labels.
 floors = ['G', '2', '10']
@@ -262,12 +270,12 @@ acc_status = ax.text(1.0, -9.0, '', fontsize=20, color='r')
 plt.title('Acceleration')
 plt.xlabel('Time (s)')
 plt.xlim(0, 30)
-plt.ylim(-10, 10)
+plt.ylim(-5, 5)
 
 if PID_DEBUG:
     debug_width = 4
     data = Pid.output_data
-    print(len(data[:,0]))
+    #print(len(data[:,0]))
     # P
     ax = fig.add_subplot(gs[0:4, debug_width:strip_width])
     p_plot, = ax.plot(data[:,0], data[:,1], '-k')
@@ -296,7 +304,7 @@ if PID_DEBUG:
 
 
 # Animation.
-elevator_ani = animation.FuncAnimation(fig, update_plot, frames=range(0,int(30.0*100),10), interval=100, repeat = False, blit=True)
+elevator_ani = animation.FuncAnimation(fig, update_plot, frames=range(0,int(30.0*20)), interval=50, repeat = False, blit=True)
 #line_ani.save('lines.mp4')
 
 plt.show()
