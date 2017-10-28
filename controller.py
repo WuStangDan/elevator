@@ -4,17 +4,17 @@ from sim.elevator import sim_run
 # Simulator Options
 options = {}
 options['FIG_SIZE'] = [8, 8] # [Width, Height]
-options['PID_DEBUG'] = True
+options['PID_DEBUG'] = False
 
 # Physics Options
 options['GRAVITY'] = True
 options['FRICTION'] = True
-options['MASS_RATIO'] = 1.1
+options['MASS_RATIO'] = 0.9
 
 # Controller Options
 options['CONTROLLER'] = True
-options['START_LOC'] = 27.0
-options['SET_POINT'] = 3.0
+options['START_LOC'] = 3.0
+options['SET_POINT'] = 27.0
 
 
 class PidController:
@@ -31,11 +31,12 @@ class PidController:
         self.output_min_max = True
         self.output_offset = True
 
-    def Run(self, x, t):
-        kp = 2
+    def run(self, x, t):
+        kp = 1.5
         ki = 0.5
         kd = 2.5
 
+        # Controller run time.
         if t - self.prev_time < 0.05:
             return self.output
         else:
@@ -62,18 +63,14 @@ class PidController:
             output = P_out + I_out + D_out
 
             if self.output_min_max:
-                if output > 4:
-                    output = 4
-                if output < -4:
-                    output = -4
+                if output > 3.5:
+                    output = 3.5
+                if output < -3.5:
+                    output = -3.5
             if self.output_offset:
                 output += 9.8
 
-            #print(round(P_out,2), round(I_out,2), round(D_out,2), output)
-            #print(self.count)
-            self.count += 1
             self.output = output
-
             self.output_data = np.concatenate((self.output_data, \
                 np.array([[t, P_out, I_out, D_out]])))
 

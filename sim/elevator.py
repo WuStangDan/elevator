@@ -27,7 +27,7 @@ def sim_run(options, PidController):
 
 
     # ODE Solver
-    def ElevatorPhysics(t, state):
+    def elevator_physics(t, state):
         # State vector.
         x = state[0]
         x_dot = state[1]
@@ -37,7 +37,7 @@ def sim_run(options, PidController):
         x_dot_dot = 0
 
         if CONTROLLER:
-            x_dot_dot += Pid.Run(x,t) / MASS_RATIO
+            x_dot_dot += Pid.run(x,t) / MASS_RATIO
         if GRAVITY:
             # Without this gravity will start before controller
             # causing automatic fail message.
@@ -55,16 +55,13 @@ def sim_run(options, PidController):
 
 
     # ODE Info.
-
-    solver = ode(ElevatorPhysics)
+    solver = ode(elevator_physics)
     solver.set_integrator('dopri5')
 
     # Set initial values.
     t0 = 0.0
     t_end = 30.2
     dt = 0.05
-
-
     t = np.arange(t0, t_end, dt)
 
 
@@ -85,8 +82,6 @@ def sim_run(options, PidController):
         k += 1
         prev_vel = solver.y[1]
 
-
-
     state = sol
 
 
@@ -95,6 +90,8 @@ def sim_run(options, PidController):
 
 
     def update_plot(num):
+        #print(state[num])
+
         # Time bar.
         time_bar.set_data([7.8, 7.8], [0, num/20])
 
@@ -103,8 +100,6 @@ def sim_run(options, PidController):
         el_r.set_data([6, 6],[state[num,0], state[num,0]+3])
         el_t.set_data([3, 6],[state[num,0]+3, state[num,0]+3])
         el_b.set_data([3, 6],[state[num,0], state[num,0]])
-
-        #print(state[num])
 
         # Timer.
         time_text.set_text(str(round(num/20+0.04,1)))
