@@ -9,12 +9,15 @@ options['PID_DEBUG'] = False
 # Physics Options
 options['GRAVITY'] = True
 options['FRICTION'] = True
-options['MASS_RATIO'] = 0.9
+options['ELEVATOR_MASS'] = 500
+options['COUNTERWEIGHT_MASS'] = 500
+options['PEOPLE_MASS'] = 0
 
 # Controller Options
 options['CONTROLLER'] = True
 options['START_LOC'] = 3.0
 options['SET_POINT'] = 27.0
+options['OUTPUT_GAIN'] = 1000
 
 
 class PidController:
@@ -29,7 +32,7 @@ class PidController:
         self.output = 0
         self.output_data = np.array([[0, 0, 0, 0]])
         self.output_min_max = True
-        self.output_offset = True
+        self.output_offset = False
 
     def run(self, x, t):
         kp = 1.5

@@ -16,12 +16,15 @@ def sim_run(options, PidController):
     # Physics Options
     GRAVITY = options['GRAVITY']
     FRICTION = options['FRICTION']
-    MASS_RATIO = options['MASS_RATIO']
+    E_MASS = options['ELEVATOR_MASS']
+    CW_MASS = options['COUNTERWEIGHT_MASS']
+    P_MASS = options['PEOPLE_MASS']
 
     # Controller Options
     CONTROLLER = options['CONTROLLER']
     START_LOC = options['START_LOC']
     SET_POINT = options['SET_POINT']
+    OUTPUT_GAIN = options['OUTPUT_GAIN']
 
     Pid = PidController(SET_POINT)
 
@@ -37,15 +40,11 @@ def sim_run(options, PidController):
         x_dot_dot = 0
 
         if CONTROLLER:
-            x_dot_dot += Pid.run(x,t) / MASS_RATIO
+            x_dot_dot += Pid.run(x,t) * OUTPUT_GAIN / (E_MASS + CW_MASS + P_MASS)
         if GRAVITY:
-            # Without this gravity will start before controller
-            # causing automatic fail message.
-            if CONTROLLER and x_dot_dot == 0:
-                x_dot_dot -= g
-            x_dot_dot += g
+            x_dot_dot += g*(E_MASS + P_MASS - CW_MASS) / (E_MASS + P_MASS + CW_MASS)
         if FRICTION:
-            x_dot_dot -= x_dot * 0.5
+            x_dot_dot -= x_dot * 0.1
 
         #print(t, x_dot, x_dot_dot)
         # Output state derivatives.
