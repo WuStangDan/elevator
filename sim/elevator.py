@@ -190,7 +190,7 @@ def sim_run(options, PidController):
     # Acceleration
     ax = fig.add_subplot(gs[10:14, strip_width:])
     acc, = ax.plot([], [], '-b')
-    acc_status = ax.text(1.0, -9.0, '', fontsize=20, color='r')
+    acc_status = ax.text(1.0, -4.0, '', fontsize=20, color='r')
     plt.title('Acceleration')
     plt.xlabel('Time (s)')
     plt.xlim(0, 30)
