@@ -53,6 +53,8 @@ class PDController:
                 D_out = 0
             else:
                 D_out = 0
+                # Set this to error.
+                self.prev_error = None
 
             # Calculate final output.
             self.output = P_out + D_out
