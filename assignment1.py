@@ -14,9 +14,9 @@ options['COUNTERWEIGHT_MASS'] = 0
 options['PEOPLE_MASS'] = 0
 
 # Controller Options
-options['CONTROLLER'] = False
+options['CONTROLLER'] = True
 options['START_LOC'] = 0.0
-options['SET_POINT'] = 27.0
+options['SET_POINT'] = 12.0
 options['OUTPUT_GAIN'] = 500
 
 
@@ -34,7 +34,7 @@ class Controller:
             self.prev_time = t
             # INSERT CODE BELOW.
 
-            self.output = 9.8
+            self.output = 4
             # INSERT CODE ABOVE.
             return self.output
 
