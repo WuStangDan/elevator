@@ -24,7 +24,7 @@ class PDController:
     def __init__(self, reference):
         self.r = reference
         self.prev_time = 0
-        self.prev_error = 0
+        self.prev_error = None
         self.output = 0
         # Part of PID DEBUG
         self.output_data = np.array([[0, 0, 0, 0]])
@@ -43,14 +43,16 @@ class PDController:
 
             # Calculate error.
 
-
             # Calculate proportional control output.
             P_out = 0
 
             # Calculate derivative control output.
             # HINT: Use self.prev_error to store old
             # error values and dt for time difference.
-            D_out = 0
+            if self.prev_error != None:
+                D_out = 0
+            else:
+                D_out = 0
 
             # Calculate final output.
             self.output = P_out + D_out
