@@ -44,7 +44,7 @@ def sim_run(options, PidController):
         if GRAVITY:
             x_dot_dot += g*(E_MASS + P_MASS - CW_MASS) / (E_MASS + P_MASS + CW_MASS)
         if FRICTION:
-            x_dot_dot -= x_dot * 0.1
+            x_dot_dot -= x_dot * 0.2
 
         #print(t, x_dot, x_dot_dot)
         # Output state derivatives.
