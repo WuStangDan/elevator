@@ -9,15 +9,15 @@ options['PID_DEBUG'] = False
 # Physics Options
 options['GRAVITY'] = True
 options['FRICTION'] = False
-options['ELEVATOR_MASS'] = 500
-options['COUNTERWEIGHT_MASS'] = 500
+options['ELEVATOR_MASS'] = 1000
+options['COUNTERWEIGHT_MASS'] = 1000
 options['PEOPLE_MASS'] = 0
 
 # Controller Options
 options['CONTROLLER'] = True
 options['START_LOC'] = 3.0
 options['SET_POINT'] = 27.0
-options['OUTPUT_GAIN'] = 1000
+options['OUTPUT_GAIN'] = 2000
 
 
 class PDController:
