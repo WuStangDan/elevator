@@ -32,6 +32,7 @@ class PIDController:
 
     def run(self, x, t):
         kp = 0
+        ki = 0
         kd = 0
 
         # Controller run time.
@@ -62,7 +63,7 @@ class PIDController:
                 self.prev_error = None
 
             # Calculate final output.
-            self.output = P_out + D_out
+            self.output = P_out + I_out + D_out
 
             # INSERT CODE ABOVE
             self.output_data = np.concatenate((self.output_data, \
