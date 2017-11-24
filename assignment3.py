@@ -11,12 +11,13 @@ options['GRAVITY'] = True
 options['FRICTION'] = True
 options['ELEVATOR_MASS'] = 1000
 options['COUNTERWEIGHT_MASS'] = 1000
-options['PEOPLE_MASS'] = 0
+options['PEOPLE_MASS'] = 100
+# Also try 200, 50, and -200.
 
 # Controller Options
 options['CONTROLLER'] = True
-options['START_LOC'] = 3.0
-options['SET_POINT'] = 27.0
+options['START_LOC'] = 3.0  # Try this set too 27 and
+options['SET_POINT'] = 27.0 # set point of 3.
 options['OUTPUT_GAIN'] = 2000
 
 
