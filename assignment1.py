@@ -7,7 +7,7 @@ options['FIG_SIZE'] = [8, 8] # [Width, Height]
 options['PID_DEBUG'] = False
 
 # Physics Options
-options['GRAVITY'] = False
+options['GRAVITY'] = True
 options['FRICTION'] = False
 options['ELEVATOR_MASS'] = 500
 options['COUNTERWEIGHT_MASS'] = 0
@@ -15,8 +15,8 @@ options['PEOPLE_MASS'] = 0
 
 # Controller Options
 options['CONTROLLER'] = True
-options['START_LOC'] = 0.0
-options['SET_POINT'] = 12.0
+options['START_LOC'] = 27.0
+options['SET_POINT'] = 0.0
 options['OUTPUT_GAIN'] = 500
 
 
@@ -33,7 +33,7 @@ class Controller:
         else:
             self.prev_time = t
             # INSERT CODE BELOW.
-
+            
             self.output = 4
             # INSERT CODE ABOVE.
             return self.output

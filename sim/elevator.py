@@ -8,7 +8,7 @@ from scipy.integrate import ode
 
 
 def sim_run(options, PidController):
-    start = time.clock()
+    start = time.process_time()
     # Simulator Options
     FIG_SIZE = options['FIG_SIZE'] # [Width, Height]
     PID_DEBUG = options['PID_DEBUG']
@@ -226,7 +226,7 @@ def sim_run(options, PidController):
         plt.xlabel('Time (s)')
         plt.xlim(0, 30)
 
-    print("Compute Time: ", round(time.clock() - start, 3), "seconds.")
+    print("Compute Time: ", round(time.process_time() - start, 3), "seconds.")
     # Animation.
     elevator_ani = animation.FuncAnimation(fig, update_plot, frames=range(0,int(30.0*20)), interval=50, repeat = False, blit=True)
     #line_ani.save('lines.mp4')
